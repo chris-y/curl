@@ -725,8 +725,7 @@ CURLcode Curl_read(struct connectdata *conn, /* connection data */
   struct Curl_easy *data = conn->data;
 
   /* if HTTP/1 pipelining is both wanted and possible */
-  bool pipelining = Curl_pipeline_wanted(data->multi, CURLPIPE_HTTP1) &&
-    (conn->bundle->multiuse == BUNDLE_PIPELINING);
+  bool pipelining = FALSE;
 
   /* Set 'num' to 0 or 1, depending on which socket that has been sent here.
      If it is the second socket, we set num to 1. Otherwise to 0. This lets
