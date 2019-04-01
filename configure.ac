@@ -844,8 +844,14 @@ then
   AC_MSG_CHECKING([for gethostbyname for AmigaOS bsdsocket.library])
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([[
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
     ]],[[
       gethostbyname("www.dummysite.com");
     ]])
