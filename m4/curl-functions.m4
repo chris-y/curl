@@ -554,8 +554,14 @@ AC_DEFUN([CURL_INCLUDES_BSDSOCKET], [
 curl_includes_bsdsocket="\
 /* includes start */
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#  ifdef __amigaos4__
+#    define __USE_INLINE__ 1
+#  endif
 #  include <proto/bsdsocket.h>
   struct Library *SocketBase = NULL;
+#  ifdef __amigaos4__
+    struct SocketIFace *ISocket = NULL;
+#  endif
 #endif
 /* includes end */"
   AC_CHECK_HEADERS(
