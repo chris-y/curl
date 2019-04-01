@@ -818,7 +818,7 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
         $curl_includes_winsock2
-      $curl_includes_bsdsocket
+        $curl_includes_bsdsocket
         $curl_includes_socket
       ]],[[
         if(0 != closesocket(0))
@@ -870,6 +870,7 @@ dnl then HAVE_CLOSESOCKET_CAMEL will be defined.
 
 AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET_CAMEL], [
   AC_REQUIRE([CURL_INCLUDES_SYS_SOCKET])dnl
+  AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
   #
   tst_links_closesocket_camel="unknown"
   tst_proto_closesocket_camel="unknown"
@@ -880,6 +881,7 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET_CAMEL], [
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([[
       $curl_includes_sys_socket
+      $curl_includes_bsdsocket
     ]],[[
       if(0 != CloseSocket(0))
         return 1;
@@ -910,6 +912,7 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET_CAMEL], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
         $curl_includes_sys_socket
+        $curl_includes_bsdsocket
       ]],[[
         if(0 != CloseSocket(0))
           return 1;
@@ -4209,6 +4212,7 @@ dnl then HAVE_IOCTLSOCKET_CAMEL will be defined.
 
 AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL], [
   AC_REQUIRE([CURL_INCLUDES_STROPTS])dnl
+  AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])dnl
   #
   tst_links_ioctlsocket_camel="unknown"
   tst_proto_ioctlsocket_camel="unknown"
@@ -4217,7 +4221,12 @@ AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL], [
   #
   AC_MSG_CHECKING([if IoctlSocket can be linked])
   AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([IoctlSocket])
+    AC_LANG_PROGRAM([[
+      $curl_includes_bsdsocket
+    ]],[[
+      if(0 != IoctlSocket(0, 0, 0))
+        return 1;
+    ]])
   ],[
     AC_MSG_RESULT([yes])
     tst_links_ioctlsocket_camel="yes"
@@ -4243,6 +4252,7 @@ AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL], [
     AC_MSG_CHECKING([if IoctlSocket is compilable])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
+        $curl_includes_bsdsocket
         $curl_includes_stropts
       ]],[[
         if(0 != IoctlSocket(0, 0, 0))
@@ -4300,6 +4310,7 @@ AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL_FIONBIO], [
     AC_MSG_CHECKING([if IoctlSocket FIONBIO is compilable])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
+        $curl_includes_bsdsocket
         $curl_includes_stropts
       ]],[[
         long flags = 0;
