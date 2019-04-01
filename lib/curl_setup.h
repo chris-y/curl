@@ -310,6 +310,9 @@
 #endif
 
 #ifdef __AMIGA__
+#  ifdef __amigaos4__
+#    define __USE_INLINE__ 1
+#  endif
 #  include <exec/types.h>
 #  include <exec/execbase.h>
 #  include <proto/exec.h>
