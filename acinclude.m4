@@ -1032,8 +1032,14 @@ AC_DEFUN([CURL_CHECK_FUNC_RECV], [
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1081,8 +1087,14 @@ struct Library *SocketBase = NULL;
 #define RECVCALLCONV PASCAL
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1176,8 +1188,14 @@ AC_DEFUN([CURL_CHECK_FUNC_SEND], [
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1225,8 +1243,14 @@ struct Library *SocketBase = NULL;
 #define SENDCALLCONV PASCAL
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1342,8 +1366,14 @@ AC_DEFUN([CURL_CHECK_MSG_NOSIGNAL], [
 #endif
 #else
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1881,8 +1911,14 @@ AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
 #endif
 #ifndef HAVE_WINDOWS_H
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
 #endif
 #ifdef HAVE_SYS_SELECT_H
@@ -1944,8 +1980,14 @@ struct Library *SocketBase = NULL;
 #endif
 #ifndef HAVE_WINDOWS_H
 #ifdef HAVE_PROTO_BSDSOCKET_H
+#ifdef __amigaos4__
+#define __USE_INLINE__ 1
+#endif
 #include <proto/bsdsocket.h>
 struct Library *SocketBase = NULL;
+#ifdef __amigaos4__
+struct SocketIFace *ISocket = NULL;
+#endif
 #define select(a,b,c,d,e) WaitSelect(a,b,c,d,e,0)
 #endif
 #ifdef HAVE_SYS_SELECT_H
