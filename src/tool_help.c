@@ -20,6 +20,9 @@
  *
  ***************************************************************************/
 #include "tool_setup.h"
+#ifdef HAVE_STRCASECMP
+#include <strings.h>
+#endif
 
 #include "tool_panykey.h"
 #include "tool_help.h"
@@ -80,7 +83,7 @@ static const struct helptxt helptext[] = {
    "Connect to host"},
   {"-C, --continue-at <offset>",
    "Resumed transfer offset"},
-  {"-b, --cookie <data>",
+  {"-b, --cookie <data|filename>",
    "Send cookies from string/file"},
   {"-c, --cookie-jar <filename>",
    "Write cookies to <filename> after operation"},

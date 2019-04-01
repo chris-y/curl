@@ -358,7 +358,9 @@ struct ntlmdata {
 struct negotiatedata {
   /* When doing Negotiate (SPNEGO) auth, we first need to send a token
      and then validate the received one. */
-  enum { GSS_AUTHNONE, GSS_AUTHRECV, GSS_AUTHSENT } state;
+  enum {
+    GSS_AUTHNONE, GSS_AUTHRECV, GSS_AUTHSENT, GSS_AUTHDONE, GSS_AUTHSUCC
+  } state;
 #ifdef HAVE_GSSAPI
   OM_uint32 status;
   gss_ctx_id_t context;
@@ -380,6 +382,10 @@ struct negotiatedata {
   size_t output_token_length;
 #endif
 #endif
+  bool noauthpersist;
+  bool havenoauthpersist;
+  bool havenegdata;
+  bool havemultiplerequests;
 };
 #endif
 
@@ -977,6 +983,11 @@ struct connectdata {
 #endif
 #endif
 
+#ifdef USE_SPNEGO
+  struct negotiatedata negotiate; /* state data for host Negotiate auth */
+  struct negotiatedata proxyneg; /* state data for proxy Negotiate auth */
+#endif
+
   /* data used for the asynch name resolve callback */
   struct Curl_async async;
 
@@ -1198,6 +1209,7 @@ typedef enum {
   EXPIRE_ASYNC_NAME,
   EXPIRE_CONNECTTIMEOUT,
   EXPIRE_DNS_PER_NAME,
+  EXPIRE_HAPPY_EYEBALLS_DNS, /* See asyn-ares.c */
   EXPIRE_HAPPY_EYEBALLS,
   EXPIRE_MULTI_PENDING,
   EXPIRE_RUN_NOW,
@@ -1273,11 +1285,6 @@ struct UrlState {
 #endif
   struct digestdata digest;      /* state data for host Digest auth */
   struct digestdata proxydigest; /* state data for proxy Digest auth */
-
-#ifdef USE_SPNEGO
-  struct negotiatedata negotiate; /* state data for host Negotiate auth */
-  struct negotiatedata proxyneg; /* state data for proxy Negotiate auth */
-#endif
 
   struct auth authhost;  /* auth details for host */
   struct auth authproxy; /* auth details for proxy */

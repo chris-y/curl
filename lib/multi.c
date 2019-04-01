@@ -600,7 +600,7 @@ static CURLcode multi_done(struct Curl_easy *data,
 
   /* if data->set.reuse_forbid is TRUE, it means the libcurl client has
      forced us to close this connection. This is ignored for requests taking
-     place in a NTLM authentication handshake
+     place in a NTLM/NEGOTIATE authentication handshake
 
      if conn->bits.close is TRUE, it means that the connection should be
      closed in spite of all our efforts to be nice, due to protocol
@@ -617,6 +617,10 @@ static CURLcode multi_done(struct Curl_easy *data,
 #if defined(USE_NTLM)
       && !(conn->ntlm.state == NTLMSTATE_TYPE2 ||
            conn->proxyntlm.state == NTLMSTATE_TYPE2)
+#endif
+#if defined(USE_SPNEGO)
+      && !(conn->negotiate.state == GSS_AUTHRECV ||
+           conn->proxyneg.state == GSS_AUTHRECV)
 #endif
      ) || conn->bits.close
        || (premature && !(conn->handler->flags & PROTOPT_STREAM))) {
@@ -1195,57 +1199,6 @@ CURLMcode Curl_multi_add_perform(struct Curl_multi *multi,
   return rc;
 }
 
-static CURLcode multi_reconnect_request(struct Curl_easy *data)
-{
-  CURLcode result = CURLE_OK;
-  struct connectdata *conn = data->conn;
-
-  /* This was a re-use of a connection and we got a write error in the
-   * DO-phase. Then we DISCONNECT this connection and have another attempt to
-   * CONNECT and then DO again! The retry cannot possibly find another
-   * connection to re-use, since we only keep one possible connection for
-   * each.  */
-
-  infof(data, "Re-used connection seems dead, get a new one\n");
-
-  connclose(conn, "Reconnect dead connection"); /* enforce close */
-  result = multi_done(data, result, FALSE); /* we are so done with this */
-
-  /* data->conn was detached in multi_done() */
-
-  /*
-   * We need to check for CURLE_SEND_ERROR here as well. This could happen
-   * when the request failed on a FTP connection and thus multi_done() itself
-   * tried to use the connection (again).
-   */
-  if(!result || (CURLE_SEND_ERROR == result)) {
-    bool async;
-    bool protocol_done = TRUE;
-
-    /* Now, redo the connect and get a new connection */
-    result = Curl_connect(data, &async, &protocol_done);
-    if(!result) {
-      /* We have connected or sent away a name resolve query fine */
-
-      conn = data->conn; /* in case it was updated */
-      if(async) {
-        /* Now, if async is TRUE here, we need to wait for the name
-           to resolve */
-        result = Curl_resolver_wait_resolv(conn, NULL);
-        if(result)
-          return result;
-
-        /* Resolved, continue with the connection */
-        result = Curl_once_resolved(conn, &protocol_done);
-        if(result)
-          return result;
-      }
-    }
-  }
-
-  return result;
-}
-
 /*
  * do_complete is called when the DO actions are complete.
  *
@@ -1266,27 +1219,6 @@ static CURLcode multi_do(struct Curl_easy *data, bool *done)
   if(conn->handler->do_it) {
     /* generic protocol-specific function pointer set in curl_connect() */
     result = conn->handler->do_it(conn, done);
-
-    /* This was formerly done in transfer.c, but we better do it here */
-    if((CURLE_SEND_ERROR == result) && conn->bits.reuse) {
-      /*
-       * If the connection is using an easy handle, call reconnect
-       * to re-establish the connection.  Otherwise, let the multi logic
-       * figure out how to re-establish the connection.
-       */
-      if(!data->multi) {
-        result = multi_reconnect_request(data);
-
-        if(!result) {
-          /* ... finally back to actually retry the DO phase */
-          conn = data->conn; /* re-assign conn since multi_reconnect_request
-                                creates a new connection */
-          result = conn->handler->do_it(conn, done);
-        }
-      }
-      else
-        return result;
-    }
 
     if(!result && *done)
       /* do_complete must be called after the protocol-specific DO function */
@@ -1949,23 +1881,25 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
         }
       }
       else if((CURLE_HTTP2_STREAM == result) &&
-                Curl_h2_http_1_1_error(data->conn)) {
+              Curl_h2_http_1_1_error(data->conn)) {
         CURLcode ret = Curl_retry_request(data->conn, &newurl);
 
-        infof(data, "Forcing HTTP/1.1 for NTLM");
-        data->set.httpversion = CURL_HTTP_VERSION_1_1;
-
-        if(!ret)
-          retry = (newurl)?TRUE:FALSE;
-        else
-          result = ret;
-
-        if(retry) {
-          /* if we are to retry, set the result to OK and consider the
-             request as done */
+        if(!ret) {
+          infof(data, "Downgrades to HTTP/1.1!\n");
+          data->set.httpversion = CURL_HTTP_VERSION_1_1;
+          /* clear the error message bit too as we ignore the one we got */
+          data->state.errorbuf = FALSE;
+          if(!newurl)
+            /* typically for HTTP_1_1_REQUIRED error on first flight */
+            newurl = strdup(data->change.url);
+          /* if we are to retry, set the result to OK and consider the request
+             as done */
+          retry = TRUE;
           result = CURLE_OK;
           done = TRUE;
         }
+        else
+          result = ret;
       }
 
       if(result) {
@@ -2010,13 +1944,12 @@ static CURLMcode multi_runsingle(struct Curl_multi *multi,
           }
           else
             follow = FOLLOW_RETRY;
-          result = multi_done(data, CURLE_OK, FALSE);
+          (void)multi_done(data, CURLE_OK, FALSE);
+          /* multi_done() might return CURLE_GOT_NOTHING */
+          result = Curl_follow(data, newurl, follow);
           if(!result) {
-            result = Curl_follow(data, newurl, follow);
-            if(!result) {
-              multistate(data, CURLM_STATE_CONNECT);
-              rc = CURLM_CALL_MULTI_PERFORM;
-            }
+            multistate(data, CURLM_STATE_CONNECT);
+            rc = CURLM_CALL_MULTI_PERFORM;
           }
           free(newurl);
         }
